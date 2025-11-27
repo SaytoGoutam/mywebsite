@@ -64,22 +64,47 @@ $(document).ready(function() {
       origin: "bottom"
     });
 
-  //contact form to excel sheet
-  const scriptURL = 'https://script.google.com/macros/s/AKfycbzUSaaX3XmlE5m9YLOHOBrRuCh2Ohv49N9bs4bew7xPd1qlgpvXtnudDs5Xhp3jF-Fx/exec';
+  //contact form to local backend
+  const apiURL = 'http://localhost:5000/api/contact';
   const form = document.forms['submitToGoogleSheet']
   const msg = document.getElementById("msg")
 
   form.addEventListener('submit', e => {
       e.preventDefault()
-      fetch(scriptURL, { method: 'POST', body: new FormData(form) })
-          .then(response => {
-              msg.innerHTML = "Message sent successfully"
+      
+      const formData = {
+          NAME: form.NAME.value,
+          EMAIL: form.EMAIL.value,
+          SUBJECT: form.SUBJECT.value,
+          MESSAGE: form.MESSAGE.value
+      };
+
+      fetch(apiURL, { 
+          method: 'POST', 
+          headers: {
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+          if (data.success || data.message) {
+              msg.innerHTML = "Message sent successfully!"
+              msg.style.color = "#52C77B"
               setTimeout(function () {
                   msg.innerHTML = ""
               }, 5000)
               form.reset()
-          })
-          .catch(error => console.error('Error!', error.message))
+          } else {
+              msg.innerHTML = "Error: " + (data.error || 'Failed to send message')
+              msg.style.color = "#FF6B6B"
+          }
+      })
+      .catch(error => {
+          console.error('Error!', error.message)
+          msg.innerHTML = "Error: " + error.message
+          msg.style.color = "#FF6B6B"
+      })
   })
     
   });
