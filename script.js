@@ -64,13 +64,18 @@ $(document).ready(function() {
       origin: "bottom"
     });
 
-  //contact form to local backend
-  const apiURL = 'http://localhost:5000/api/contact';
+  // Contact form to the same-origin backend. Secrets remain server-side.
+  const apiURL = '/api/contact';
   const form = document.forms['submitToGoogleSheet']
   const msg = document.getElementById("msg")
 
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
       e.preventDefault()
+
+      if (!form.checkValidity()) {
+          form.reportValidity()
+          return
+      }
       
       const formData = {
           NAME: form.NAME.value,
@@ -79,16 +84,17 @@ $(document).ready(function() {
           MESSAGE: form.MESSAGE.value
       };
 
-      fetch(apiURL, { 
-          method: 'POST', 
-          headers: {
-              'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(formData)
-      })
-      .then(response => response.json())
-      .then(data => {
-          if (data.success || data.message) {
+      try {
+          const response = await fetch(apiURL, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formData)
+          })
+          const data = await response.json()
+
+          if (response.ok && data.success) {
               msg.innerHTML = "Message sent successfully!"
               msg.style.color = "#52C77B"
               setTimeout(function () {
@@ -99,12 +105,11 @@ $(document).ready(function() {
               msg.innerHTML = "Error: " + (data.error || 'Failed to send message')
               msg.style.color = "#FF6B6B"
           }
-      })
-      .catch(error => {
+      } catch (error) {
           console.error('Error!', error.message)
-          msg.innerHTML = "Error: " + error.message
+          msg.innerHTML = "Unable to send your message. Please try again later."
           msg.style.color = "#FF6B6B"
-      })
+      }
   })
     
   });
@@ -136,4 +141,3 @@ $(document).ready(function() {
   }
   
 
- 
